@@ -1,7 +1,9 @@
+@attribute [Authorize]
 @page "/checkout"
 @inject OrderState OrderState
 @inject OrdersClient _ordersClient
 @inject NavigationManager NavigationManager
+
 
 <div class="main">
     <EditForm Model="OrderState.Order.DeliveryAddress" OnValidSubmit="PlaceOrder">
