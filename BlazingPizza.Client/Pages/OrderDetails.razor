@@ -1,6 +1,6 @@
 @page "/myorders/{orderId:int}"
 @using System.Threading
-@inject HttpClient _httpClient
+@inject OrdersClient _ordersClient
 @implements IDisposable
 
 <div class="main">
@@ -51,35 +51,63 @@
         PollForUpdates();
     }
 
+    // private async void PollForUpdates()
+    // {
+    //     pollingCancellationToken = new CancellationTokenSource();
+    //     while (!pollingCancellationToken.IsCancellationRequested)
+    //     {
+    //         try
+    //         {
+    //             invalidOrder = false;
+    //             orderWithStatus = await _ordersClient.GetFromJsonAsync<OrderWithStatus>($"orders/{OrderId}");
+    //             StateHasChanged();
+    //
+    //             if (orderWithStatus.IsDelivered)
+    //             {
+    //                 pollingCancellationToken.Cancel();
+    //             }
+    //             else
+    //             {
+    //                 await Task.Delay(4000);
+    //             }
+    //         }
+    //         catch (Exception ex)
+    //         {
+    //             invalidOrder = true;
+    //             pollingCancellationToken.Cancel();
+    //             Console.Error.WriteLine(ex);
+    //             StateHasChanged();
+    //         }
+    //     }
+    //}
+    
     private async void PollForUpdates()
-    {
-        pollingCancellationToken = new CancellationTokenSource();
-        while (!pollingCancellationToken.IsCancellationRequested)
         {
-            try
+            invalidOrder = false;
+            pollingCancellationToken = new CancellationTokenSource();
+            while (!pollingCancellationToken.IsCancellationRequested)
             {
-                invalidOrder = false;
-                orderWithStatus = await _httpClient.GetFromJsonAsync<OrderWithStatus>($"orders/{OrderId}");
-                StateHasChanged();
-
-                if (orderWithStatus.IsDelivered)
+                try
                 {
-                    pollingCancellationToken.Cancel();
-                }
-                else
-                {
+                    orderWithStatus = await _ordersClient.GetOrder(OrderId);
+                    StateHasChanged();
                     await Task.Delay(4000);
                 }
-            }
-            catch (Exception ex)
-            {
-                invalidOrder = true;
-                pollingCancellationToken.Cancel();
-                Console.Error.WriteLine(ex);
-                StateHasChanged();
+                catch (AccessTokenNotAvailableException ex)
+                {
+                    pollingCancellationToken.Cancel();
+                    ex.Redirect();
+                }
+                catch (Exception ex)
+                {
+                    invalidOrder = true;
+                    pollingCancellationToken.Cancel();
+                    Console.Error.WriteLine(ex);
+                    StateHasChanged();
+                }
             }
         }
-    }
+
     
     void IDisposable.Dispose()
     {
