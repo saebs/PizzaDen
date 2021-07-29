@@ -1,10 +1,10 @@
 @page "/myorders"
-@inject HttpClient _httpClient
+@inject OrdersClient _ordersClient
 
 <div class="main">
     @if (ordersWithStatus == null)
     {
-        <text>Loading...</text>
+        <text>Ima kancane, Loading</text>
     }
     else if (!ordersWithStatus.Any())
     {
@@ -41,11 +41,21 @@
 
 
 @code {
+
     IEnumerable<OrderWithStatus> ordersWithStatus;
 
     protected override async Task OnParametersSetAsync()
     {
-        ordersWithStatus = await _httpClient.GetFromJsonAsync<List<OrderWithStatus>>("orders");
+        try
+        {
+            ordersWithStatus = await _ordersClient.GetOrders();
+        }
+        catch (AccessTokenNotAvailableException ex)
+        {
+            ex.Redirect();
+        }
     }
+
+
 }
 
